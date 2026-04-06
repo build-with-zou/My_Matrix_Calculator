@@ -1,0 +1,4 @@
+# 忽略根目录及所有子目录中的 __pycache__ 文件夹[reference:1][reference:2]
+**/__pycache__/
+# 作为补充，也建议忽略以 .pyc 结尾的字节码文件[reference:3][reference:4]
+*.py[cod]

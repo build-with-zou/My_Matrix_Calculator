@@ -954,7 +954,7 @@ def LU_decomposition(self):
                 U.data[i][j] -= mul * U.data[k][j]
             # 对 L 做行加法（逆变换）
             for j in range(n):
-                L.data[i][j] += mul * L.data[k][j]
+                L.data[i][j] += mul * L.data[k][j] # 需要注意的是，L 的变换是 U 变换的逆，所以是加法而不是减法
     return L, U
 
 def Cholesky_decomposition(self):
@@ -985,9 +985,57 @@ def Cholesky_decomposition(self):
 	
 	return ans_L
 
-					
+def LU_decomposition_with_partial_pivoting(self):
+	r"""
+	计算矩阵带行交换的LU分解 : PA = LU
 
-				 
+	Returns:
+		P: 一个 Matrix 实例，表示置换矩阵
+		L: 一个 Matrix 实例，表示下三角矩阵
+		U: 一个 Matrix 实例，表示上三角矩阵
+	"""
+
+	def find_max_row(matrix, col, total_row):
+		max_row = col
+		for i in range(col+1, total_row):
+			if abs(matrix[i, col]) > abs(matrix[max_row, col]):
+				max_row = i
+		# 如果最大元的绝对值接近0，认为该列全零
+		if abs(matrix[max_row, col]) < 1e-15:   # 阈值可调
+			return True, max_row
+		else:
+			return False, max_row
+	row, col = self.dim
+	U = self.copy()
+	P = I(row)
+	L = I(row)
+
+	for i in range(row):
+		is_empty,max_row = find_max_row(U,i,row) # 找到最大行 
+
+		# 交换最大行到当前处理行
+		if is_empty == True:
+			continue # 直接进入下一列的处理
+		else:
+			U[max_row,:],U[i,:] = U[i,:],U[max_row,:]
+			P[max_row,:],P[i,:] = P[i,:],P[max_row,:] # P和U的行变换同步
+			for j in range(i):
+				L[max_row,j],L[i,j] = L[i,j],L[max_row,j]
+
+		# 然后开始高斯消元
+
+		for k in range(i+1,row):
+			mul = U[k,i]/U[i,i]
+			for p in range(i,col):
+				U[k,p] -= U[i,p] * mul
+			L[k,i] += mul
+	return P, L, U 
+
+
+
+
+
+	
 
 
 			

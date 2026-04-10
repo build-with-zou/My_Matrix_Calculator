@@ -3,6 +3,7 @@
 import random
 import copy
 import math
+from vector import Vector
 class Matrix:
 	r"""
 	自定义的二维矩阵类
@@ -573,10 +574,12 @@ class Matrix:
 		"""
 		height = self.dim[0]
 		ans = ''
+		epsilon = 1e-9
 		for i in range(height):
 			ans_row = ''
 			for item in self.data[i]:
-				ans_row += f'{item:>8}'
+				display_item = 0 if abs(item) < epsilon else item
+				ans_row += f'{display_item:>8}'
 			ans_row = f'[{ans_row}]\n'
 			ans += ans_row
 		ans = f'[\n{ans}]'
@@ -716,6 +719,31 @@ class Matrix:
 			if row == rows:
 				break
 		return rank
+	
+	def column_vectors(self):
+		r"""
+		将一个矩阵列分块成若干个向量
+		
+		Returns: List[Vector]: 一个列表，其中的元素为 Vector 实例，表示分块得到的向量
+		"""
+		lst = []
+		for i in range(self.dim[1]):
+			col_vector = [self.data[j][i] for j in range(self.dim[0])]
+			lst.append(Vector(col_vector))
+		return lst
+	
+	def row_vectors(self):
+		r"""
+		将一个矩阵行分块成若干个向量
+		
+		Returns: List[Vector]: 一个列表，其中的元素为 Vector 实例，表示分块得到的向量
+		"""
+		lst = []
+		for i in range(self.dim[0]):
+			row_vector = [self.data[i][j] for j in range(self.dim[1])]
+			lst.append(Vector(row_vector))
+		return lst
+	
 def I(n):
 	'''
 	return an n*n unit matrix
@@ -1032,9 +1060,45 @@ def LU_decomposition_with_partial_pivoting(self):
 	return P, L, U 
 
 
+def QR_decomposition_with_inner_product(self):
+	r"""
+	通过最基本的内积运算来计算矩阵的QR分解
+
+	Return:
+		Q：一个Matrix实例，表示正交矩阵
+		R：一个Matrix实例，表示上三角矩阵
+	"""
+
+	if self.dim[0] != self.dim[1]:
+		raise ValueError("Matrix should be square for QR decomposition.")
+	
+	n = self.dim[0]
+
+	lst = self.column_vectors() # 将矩阵的列分块成向量
+	eta_lst = [] #用于记录每个已经正交化归一化的向量
+	for item in lst:
+		if not eta_lst: # 如果 eta_lst 还没有元素，说明当前 item 是第一个向量，直接归一化后加入 eta_lst
+			eta = item * (1 / (item.dot(item) ** 0.5))
+			eta_lst.append(eta)
+		else:
+			# 否则需要先将 item 正交化，再归一化
+			eta = Vector.Schmitt(item, eta_lst)
+			eta_lst.append(eta)
+	# 将 eta_lst 中的向量重新组合成矩阵 Q
+	Q= []
+	for item in eta_lst:
+		# 使用concatenate将每个向量转换成一个列矩阵，然后拼接成 Q
+		cnt = Matrix(data = [item.data]).reshape((self.dim[0], 1))
+		Q.append(cnt)
+	Q_data = concatenate(Q, axis=1).data
+	Q = Matrix(data = Q_data)
+	# 计算 R = Q^T A
+	R = Q.T().dot(self)
+	return Q, R
 
 
-
+		
+	
 	
 
 

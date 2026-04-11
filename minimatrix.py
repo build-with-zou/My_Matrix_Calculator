@@ -152,7 +152,7 @@ class Matrix:
 			ans_lst.append(lst)
 		return Matrix(data=ans_lst)
 				
-
+	
 
 	def sum(self, axis=None): 
 		r"""
@@ -526,6 +526,17 @@ class Matrix:
 			for j in range(length):
 				result.data[i][j] -= other.data[i][j]
 		return Matrix(data=result.data)
+	
+	def number_mul(self,num):
+		r"""
+		对矩阵进行数乘
+		"""
+		ans_data = self.copy().data
+		row ,col = self.dim
+		for i in range(row):
+			for j in range(col):
+				ans_data[i][j] *= num
+		return Matrix(data = ans_data)
 
 	def __mul__(self, other):
 		r"""
@@ -1072,8 +1083,6 @@ def QR_decomposition_with_inner_product(self):
 	if self.dim[0] != self.dim[1]:
 		raise ValueError("Matrix should be square for QR decomposition.")
 	
-	n = self.dim[0]
-
 	lst = self.column_vectors() # 将矩阵的列分块成向量
 	eta_lst = [] #用于记录每个已经正交化归一化的向量
 	for item in lst:
@@ -1096,9 +1105,63 @@ def QR_decomposition_with_inner_product(self):
 	R = Q.T().dot(self)
 	return Q, R
 
+def Householder(normal_vector):
+	r"""
+	输入：一个1*n的Matrix实例
+	Return: 一个 Matrix 实例，表示关于normal_vector作为法向量变换的Householder变换矩阵
+	"""
+	if normal_vector.dim[0] != 1:
+		raise ValueError("The normal vector should be a row vector.")
+	n = normal_vector.dim[1]
+	norm_sq = normal_vector.dot(normal_vector.T()).data[0][0]
+	if abs(norm_sq) < 1e-12:          # 零向量，返回单位矩阵
+		return I(n)
+	return I(n) - ( normal_vector.T().dot(normal_vector).number_mul ( 1 / normal_vector.dot(normal_vector.T()).data[0][0])).number_mul(2)
 
+
+def QR_decomposition_with_Householder_Transformation(self:Matrix):
+	r"""
+	通过 Householder 变换来计算矩阵的 QR 分解
+
+	Return:
+		Q：一个 Matrix 实例，表示正交矩阵
+		R：一个 Matrix 实例，表示上三角矩阵
+	"""
+	if self.dim[0] != self.dim[1]:
+		raise ValueError("Matrix should be square for QR decomposition.")
+	n = self.dim[0]
+	cnt_A = self.copy()
+	H = I(n)
+	for i in range(n-1): # 表示处理第i列
+		H_0 = I(n)
+		cnt_col = Matrix(data =[ cnt_A.column_vectors()[i].data[i:]])
+		sign = 1 if cnt_col.data[0][0] >= 0 else -1 
+		length = math.sqrt(cnt_col.dot(cnt_col.T()).data[0][0]) # 获得当前列的范数
+
+		aft_vector = [[length]]
+		for j in range(n-i-1):
+			aft_vector[0].append(0)
+		aft_matrix = Matrix(data = aft_vector)
+		cnt_normal = cnt_col - aft_matrix # 得到这次householder变换法向量
+		cnt_H = Householder(cnt_normal)  # 得到这次Householder矩阵，但要注意这里是n-i-1维的
+
+		H_0[i:,i:] = cnt_H # 把新的Householder矩阵拼接成为一个完整的矩阵	
+		H = H_0.dot(H) # 合成完整的Householder矩阵
+		cnt_A = H_0.dot(cnt_A)
+	Q  = H.T()
+	R = cnt_A
+
+	# 使 R 的对角线元素全部为正
+	for i in range(n):
+		if R.data[i][i] < 0:
+			# 将 R 的第 i 行取反
+			for j in range(n):
+				R.data[i][j] = -R.data[i][j]
+			# 将 Q 的第 i 列取反（保持 A = Q R 不变）
+			for j in range(n):
+				Q.data[j][i] = -Q.data[j][i]
+	return Q,R
 		
-	
 	
 
 

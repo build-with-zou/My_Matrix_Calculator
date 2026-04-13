@@ -1163,7 +1163,39 @@ def QR_decomposition_with_Householder_Transformation(self:Matrix):
 	return Q,R
 		
 	
+def QR_decomposition_with_Givens_Rotation(self):
+	r"""
+	通过 Givens 旋转来计算矩阵的 QR 分解
 
+	Return:
+		Q：一个 Matrix 实例，表示正交矩阵
+		R：一个 Matrix 实例，表示上三角矩阵
+	"""
+	if self.dim[0] != self.dim[1]:
+		raise ValueError("Matrix should be square for QR decomposition.")
+	row,col = self.dim
+	G_0 = I(row) # 用于记录每次的Givens旋转矩阵
+	for i in range(col):
+		# 处理第i列
+		for j in range(i+1,row):
+			# 接下来一行行的将这一列的元素变换为0
+			if abs(self.data[j][i]) > 1e-12: # 如果这个元素已经是0了就不需要变换了
+				a = self.data[i][i]
+				b = self.data[j][i]
+				r = math.sqrt(a**2 + b**2)
+				c = a / r
+				s = b / r
+				G = I(row)
+				G[i,i] = c
+				G[j,j] = c
+				G[i,j] = s
+				G[j,i] = -s
+				self = G.dot(self)
+				G_0 = G.dot(G_0)
+	Q = G_0.T()
+	R = self
+	return Q,R
+	
 
 			
 			

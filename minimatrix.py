@@ -1195,42 +1195,35 @@ def QR_decomposition_with_Givens_Rotation(self):
 	Q = G_0.T()
 	R = self
 	return Q,R
-	
 
-			
-			
-# def QR_decomposition(self):
-# 	r"""
-# 	计算矩阵的QR分解
+def QR_eigenvalues(self):
+	r"""
+	目前这个代码仅适用于特征值都是实数的情况，如果存在复数特征值，迭代可能无法收敛
 
-# 	Returns:
-# 		Q: 一个 Matrix 实例，表示正交矩阵
-# 		R: 一个 Matrix 实例，表示上三角矩阵
-# 	"""
-# 	if self.dim[0] != self.dim[1]:
-# 		raise ValueError('Matrix must be square for QR decomposition.')
+	通过 QR 分解迭代法计算矩阵的特征值
+	Returns:
+		eigenvalues: 一个列表，包含所有的特征值
+	"""
+	if self.dim[0] != self.dim[1]:
+		raise ValueError("Matrix should be square for eigenvalue decomposition.")
+	n = self.dim[0]
+	A_k = self.copy()
+	for i in range(10000000): # 迭代次数上限，防止死循环
+		Q, R = QR_decomposition_with_Givens_Rotation(A_k)
+		A_k = R.dot(Q) #迭代更新A_k
+		# 检查A_k的下三角部分是否已经足够接近0，如果是，则认为迭代已经收敛
+		off_diagonal_sum = 0
+		for i in range(n):
+			for j in range(i):
+				off_diagonal_sum += abs(A_k.data[i][j])
+		if off_diagonal_sum < 1e-12: # 如果下三角部分的元素之和足够小，认为已经收敛
+			break
+	else:
+		raise ValueError("QR iteration did not converge.Maybe the matrix has complex eigenvalues.") # 如果迭代完成后仍然没有收敛，说明可能存在复数特征值，抛出异常
+	eigenvalues = [A_k.data[i][i] for i in range(n)]
+	return eigenvalues
 	
-# 	n = self.dim[0]
-# 	Q = I(n)
-# 	R = self.copy()
-	
-# 	for i in range(n):
-# 		for j in range(i + 1, n):
-# 			if R.data[j][i] != 0:
-# 				r = (R.data[i][i] ** 2 + R.data[j][i] ** 2) ** 0.5
-# 				c = R.data[i][i] / r
-# 				s = -R.data[j][i] / r
 				
-# 				G = I(n)
-# 				G.data[i][i] = c
-# 				G.data[j][j] = c
-# 				G.data[i][j] = -s
-# 				G.data[j][i] = s
-				
-# 				R = G.dot(R)
-# 				Q = Q.dot(G.T())
-	
-	# return Q, R			
 if __name__ == "__main__":
 	print("test here")
 	# a = Matrix(data = [[1,2,3],[4,5,6],[7,8,9],])

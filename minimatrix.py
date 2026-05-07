@@ -590,7 +590,7 @@ class Matrix:
 			ans_row = ''
 			for item in self.data[i]:
 				display_item = 0 if abs(item) < epsilon else item
-				ans_row += f'{display_item:>8}'
+				ans_row += f'{round(display_item, 3):>8}'
 			ans_row = f'[{ans_row}]\n'
 			ans += ans_row
 		ans = f'[\n{ans}]'
@@ -854,6 +854,14 @@ def nrandom(dim):
 	参数与返回值类型同 zeros
 	"""
 	result = [[random.random() for _ in range(dim[1])] for _ in range(dim[0])]
+	return Matrix(data = result)
+
+def nrandint(dim, low, high):
+	r"""
+	返回一个维数为dim 的随机整数 narray
+	参数与返回值类型同 zeros
+	"""
+	result = [[random.randint(low, high-1) for _ in range(dim[1])] for _ in range(dim[0])]
 	return Matrix(data = result)
 
 def nrandom_like(matrix):
